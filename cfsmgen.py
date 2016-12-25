@@ -109,45 +109,58 @@ def main():
 
     stepFuncName  = cprefix(fsmname, 'step') 
 
-    print('\n\n')
-    print(cgen.genEnum(stateEnumName, states))
-    print(cgen.genEnum(eventEnumName, events))
-    print(cgen.genStringArray(stateStringsNames, state_names))
-    print(cgen.genStringArray(eventStringsNames, event_names))
+    with open(fsmname + '_fsm.h', 'w') as header:
+        header.write('\n\n')
+        header.write(cgen.genEnum(stateEnumName, states))
+        header.write('\n')
+        header.write(cgen.genEnum(eventEnumName, events))
+        header.write('\n')
+        header.write(cgen.genStringArray(stateStringsNames, state_names))
+        header.write('\n')
+        header.write(cgen.genStringArray(eventStringsNames, event_names))
+        header.write('\n')
 
-    print(cgen.genStructDecl(fsmDataName, [('dummy', 'int')]))
-    print(cgen.genStructDecl(fsmCtxName, [('state', stateEnumName),
-                                          ('data', fsmDataName)]));
+        header.write(cgen.genStructDecl(fsmDataName, [('dummy', 'int')]))
+        header.write('\n')
+        header.write(cgen.genStructDecl(fsmCtxName, [('state', stateEnumName),
+                                              ('data', fsmDataName)]));
+        header.write('\n')
 
-    for action in actions:
-        print(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
+        for action in actions:
+            header.write(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
+            header.write('\n')
 
-    print('\n\n')
-    for action in actions:
-        print(cgen.genFuncImpl(action, 'void', [('data', pfsmDataName)],
-                               '/* TODO: Add impementation here... */'))
+        header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName),
+                                                      ('event', eventEnumName)]))
+        header.write('\n\n')
 
-    #generate body of step function
-    body  = 'const ' + stateEnumName + ' state = ctx->state;\n'
-    body += pfsmDataName + ' data = &ctx->data;\n' 
-    body += 'switch(state) {\n'
-    for s,sname in zip(states, state_names):
-        body += 'case {}:{{ \n'.format(s)
-        body += '    switch(event) {\n'
-        for e in f.get_event_names_of_state(sname):
-            t = f.get_transition(sname, e)
-            nextstate = t.next
-            action    = t.action 
-            body += '    case ' + cprefix(fsmname, e) + ': '
-            body += action + '(data); ctx->state = ' + cprefix(fsmname, nextstate) + '; '
-            body += 'break;\n'
-        body += 'default: break;\n'    
-        body += '    };'
-        body += 'break;}\n'
-    body += '}'
-    print(cgen.genFuncImpl(stepFuncName, 'void', [('ctx', pfsmCtxName),
-                                                  ('event', eventEnumName)],
-                           body))
+    with open(fsmname + '_fsm.c', 'w') as source:
+        source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
+        for action in actions:
+            source.write(cgen.genFuncImpl(action, 'void', [('data', pfsmDataName)],
+                                   '/* TODO: Add impementation here... */'))
+            source.write('\n')
+
+        #generate body of step function
+        body  = 'const ' + stateEnumName + ' state = ctx->state;\n'
+        body += pfsmDataName + ' data = &ctx->data;\n'
+        body += 'switch(state) {\n'
+        for s,sname in zip(states, state_names):
+            body += 'case {}:{{ \n'.format(s)
+            body += '    switch(event) {\n'
+            for e in f.get_event_names_of_state(sname):
+                t = f.get_transition(sname, e)
+                nextstate = t.next
+                action    = t.action
+                body += '    case ' + cprefix(fsmname, e) + ': '
+                body += action + '(data); ctx->state = ' + cprefix(fsmname, nextstate) + '; '
+                body += 'break;\n'
+            body += '    default: break;}\n'
+            body += 'break;}\n'
+        body += '}'
+        source.write(cgen.genFuncImpl(stepFuncName, 'void', [('ctx', pfsmCtxName),
+                                                      ('event', eventEnumName)],
+                               body))
 
 
 if __name__ == '__main__':
