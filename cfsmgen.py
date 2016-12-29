@@ -115,11 +115,7 @@ def fsm_generate_c_source(fsmdesc):
         header.write('\n\n')
         header.write(cgen.genEnum(stateEnumName, states))
         header.write('\n')
-        header.write(cgen.genEnum(eventEnumName, events))
-        header.write('\n')
         header.write(cgen.genStringArray(stateStringsNames, state_names))
-        header.write('\n')
-        header.write(cgen.genStringArray(eventStringsNames, event_names))
         header.write('\n')
 
         header.write(cgen.genStructDecl(fsmDataName, [('dummy', 'int')]))
@@ -132,8 +128,7 @@ def fsm_generate_c_source(fsmdesc):
             header.write(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
             header.write('\n')
 
-        header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName),
-                                                      ('event', eventEnumName)]))
+        header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName)]))
         header.write('\n\n')
 
     with open(fsmname + '_fsm.c', 'w') as source:
@@ -157,19 +152,20 @@ def fsm_generate_c_source(fsmdesc):
         body += 'switch(state) {\n'
         for s, sname in zip(states, state_names):
             body += 'case {}: \n'.format(s)
-            body += '    switch(event) {\n'
             for e in fsmdesc.get_event_names_of_state(sname):
                 t = fsmdesc.get_transition(sname, e)
-                fstr =  '    case {}: {}(data); ctx->state = {}; break;\n'
-                label     = cprefix(fsmname, e)
+                fstr = '    if ({0}(data)) {{\n' \
+                       '        {1}(data);\n' \
+                       '        ctx->state = {2};\n' \
+                       '        break;\n' \
+                       '    }}\n'
+                event     = cprefix(fsmname, e)
                 nextstate = cprefix(fsmname, t.next)
                 action    = t.action
-                body += fstr.format(label, action, nextstate)
-            body += '    default: break;}\n'
+                body     += fstr.format(event, action, nextstate)
             body += 'break;\n'
         body += '}\n'
-        source.write(cgen.genFuncImpl(stepFuncName, 'void', [('ctx', pfsmCtxName),
-                                                      ('event', eventEnumName)],
+        source.write(cgen.genFuncImpl(stepFuncName, 'void', [('ctx', pfsmCtxName)],
                                body))
 
     with open(fsmname + '_fsm.dot', 'w') as gv:
