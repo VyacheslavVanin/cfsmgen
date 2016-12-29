@@ -12,7 +12,10 @@ def genFuncDecl(name, returnType, params):
     return genFuncSignature(name, returnType, params) + ';'
 
 def genFuncImpl(name, returnType, params, body = ''):
-    return genFuncSignature(name, returnType, params) + '{\n' + body + '\n}\n'
+    return '{}\n' \
+           '{{\n' \
+           '{}\n' \
+           '}}\n'.format(genFuncSignature(name, returnType, params), body)
 
 
 def genEnum(name, members):
