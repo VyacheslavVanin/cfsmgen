@@ -107,6 +107,7 @@ def fsm_generate_c_source(fsmdesc):
     eventStringsNames = cprefix(fsmname, 'event_names')
     pfsmCtxName   = fsmCtxName + '*'
     pfsmDataName  = fsmDataName + '*'   
+    cpfsmDataName  = 'const ' + fsmDataName + '*'   
 
     stepFuncName  = cprefix(fsmname, 'step') 
 
@@ -142,6 +143,12 @@ def fsm_generate_c_source(fsmdesc):
         for action in actions:
             source.write(cgen.genFuncImpl(action, 'void', [('data', pfsmDataName)],
                                    '/* TODO: Add impementation here... */'))
+            source.write('\n')
+
+        for event in events:
+            source.write(cgen.genFuncImpl(event, 'int', [('data', cpfsmDataName)],
+                               '    /* TODO: Add impementation here... */\n' \
+                               '    return 0;'))
             source.write('\n')
 
         #generate body of step function
