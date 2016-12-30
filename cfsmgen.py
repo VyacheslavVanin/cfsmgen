@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import cgen
+import os
 
 def cprefix(prefix, name, postfix=''):
     ret = name
@@ -19,7 +20,8 @@ class TransitionDesc:
         self.action = action
 
     def __str__(self):
-        return self.next + ', ' + self.action
+        action = self.action or 'None'
+        return self.next + ', ' + action
 
     def __repr__(self):
         return '\'' + self.__str__() + '\''
@@ -39,14 +41,15 @@ class FSMDesc:
         ret += 'transitions: {}\n'.format(self.transitions)
         return ret
 
-    def add_transition(self, state, event, nextState, action):
+    def add_transition(self, state, event, nextState, action=None):
         transition = TransitionDesc(nextState, action)
         if state not in self.transitions:
             self.transitions[state] = {}
         append_uniq(self.states, state)
         append_uniq(self.states, nextState)
         append_uniq(self.events, event)
-        append_uniq(self.actions, action)
+        if action:
+            append_uniq(self.actions, action)
         self.transitions[state][event] = transition
     
     def get_name(self):
@@ -154,22 +157,19 @@ def fsm_generate_c_source(fsmdesc):
             body += 'case {}: \n'.format(s)
             for e in fsmdesc.get_event_names_of_state(sname):
                 t = fsmdesc.get_transition(sname, e)
-                fstr = '    if ({0}(data)) {{\n' \
-                       '        {1}(data);\n' \
-                       '        ctx->state = {2};\n' \
-                       '        break;\n' \
-                       '    }}\n'
                 event     = cprefix(fsmname, e)
                 nextstate = cprefix(fsmname, t.next)
                 action    = t.action
-                body     += fstr.format(event, action, nextstate)
+                body +='    if ({}(data)) {{\n'.format(event)
+                body +='        {}(data);\n'.format(action) if action else ''
+                body +='        ctx->state = {};\n'.format(nextstate)
+                body +='        break;\n' \
+                       '    }\n'
             body += 'break;\n'
         body += '}\n'
-        source.write(cgen.genFuncImpl(stepFuncName, 'void', [('ctx', pfsmCtxName)],
-                               body))
+        source.write(cgen.genFuncImpl(stepFuncName,
+                                      'void', [('ctx', pfsmCtxName)], body))
 
-    with open(fsmname + '_fsm.dot', 'w') as gv:
-        gv.write(fsmdesc.to_graphwiz())
 
 
 
@@ -181,11 +181,19 @@ def cfsm_main():
     f.add_transition('st1', 'ev2', 'st2', 'action2')
     f.add_transition('st1', 'ev3', 'st3', 'action3')
 
-    f.add_transition('st2', 'ev1', 'st1', 'action4')
+    f.add_transition('st2', 'ev1', 'st1', 'action1')
 
-    f.add_transition('st3', 'ev1', 'st1', 'action4')
+    f.add_transition('st3', 'ev1', 'st1')
 
     fsm_generate_c_source(f)
+
+    filename = '{}_fsm'.format(f.get_name())
+    filenamedot = filename + '.dot'
+    with open(filenamedot, 'w') as gv:
+        gv.write(f.to_graphwiz())
+
+    filenamepng = filename + '.png'
+    os.system('dot {} -Tpng -o {}'.format(filenamedot, filenamepng))
 
 
 
