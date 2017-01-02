@@ -27,12 +27,15 @@ def genStringArray(name, strings):
     ret += '};\n'
     return ret
 
+def genStructForwardDecl(name):
+    ret = 'typedef struct {0} {0};\n'.format(name)
+    return ret
 
 def genStructDecl(name, members):
-    ret = 'typedef struct {} {{\n'.format(name)
+    ret = 'struct {} {{\n'.format(name)
     fields = ['    {} {}'.format(fieldtype, fieldname) for fieldname, fieldtype in members]
     ret += ';\n'.join(fields)
-    ret += ';\n}} {};\n'.format(name)
+    ret += ';\n};\n'
     return ret
 
 
