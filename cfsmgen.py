@@ -56,16 +56,16 @@ class FSMDesc:
         return self.name
 
     def get_states(self):
-        return [ cprefix(self.name, s) for s in self.states]
-
-    def get_state_names(self):
         return self.states
 
+    def get_state_names(self):
+        return [ cprefix(self.name, s) for s in self.states]
+
     def get_events(self):
-        return [ cprefix(self.name, s) for s in self.events]
+        return self.events
 
     def get_event_names(self):
-        return self.events
+        return [ cprefix(self.name, s) for s in self.events]
 
     def get_actions(self):
         return self.actions
@@ -116,7 +116,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
 
     with open(fsmname + '_fsm.h', 'w') as header:
         # enum states
-        header.write(cgen.genEnum(stateEnumName, states))
+        header.write(cgen.genEnum(stateEnumName, state_names))
         header.write('\n')
 
         # state names declarations
@@ -140,7 +140,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
             header.write(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
             header.write('\n')
 
-        for event in events:
+        for event in event_names:
             header.write(cgen.genFuncDecl(event, 'int', [('data', cpfsmDataName)]))
             header.write('\n')
 
@@ -153,7 +153,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
         source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
 
         # state names definitions
-        source.write(cgen.genStringArray(stateStringsNames, state_names))
+        source.write(cgen.genStringArray(stateStringsNames, states))
         source.write('\n')
 
         #generate body of step function
@@ -161,9 +161,13 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
         body += '{} data = ctx->data;\n'.format(pfsmDataName )
         body += 'switch(state) {\n'
         for s, sname in zip(states, state_names):
-            body += 'case {}: \n'.format(s)
-            for e in fsmdesc.get_event_names_of_state(sname):
-                t = fsmdesc.get_transition(sname, e)
+            body += 'case {}: \n'.format(sname)
+            #eventlist = [e for e in fsmdesc.get_event_names_of_state(s) if e != 'default']
+            eventlist = fsmdesc.get_event_names_of_state(s)
+            for e in eventlist:
+                if e == 'default':
+                    continue
+                t = fsmdesc.get_transition(s, e)
                 event     = cprefix(fsmname, e)
                 nextstate = cprefix(fsmname, t.next)
                 action    = t.action
@@ -172,7 +176,15 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
                 body +='        ctx->state = {};\n'.format(nextstate)
                 body +='        break;\n' \
                        '    }\n'
+            if 'default' in eventlist:
+                t = fsmdesc.get_transition(s, 'default')
+                nextstate = cprefix(fsmname, t.next)
+                action    = t.action
+                body +='    {}(data);\n'.format(action) if action else ''
+                body +='    ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
             body += 'break;\n'
+
+
         body += '}\n'
         source.write(cgen.genFuncImpl(stepFuncName,
                                       'void', [('ctx', pfsmCtxName)], body))
@@ -187,10 +199,12 @@ def cfsm_main():
     f.add_transition('st1', 'ev1', 'st1', 'action1')
     f.add_transition('st1', 'ev2', 'st2', 'action2')
     f.add_transition('st1', 'ev3', 'st3', 'action3')
+    f.add_transition('st1', 'default', 'st1', 'default_st1_action')
 
     f.add_transition('st2', 'ev1', 'st1', 'action1')
 
     f.add_transition('st3', 'ev1', 'st1')
+    f.add_transition('st3', 'default', 'st1')
 
     fsm_generate_c_source(f, 'spu_data')
 
