@@ -94,7 +94,7 @@ class FSMDesc:
         return ret
 
     
-def fsm_generate_c_source(fsmdesc):
+def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
     fsmname = fsmdesc.get_name()
     states  = fsmdesc.get_states()
     events  = fsmdesc.get_events()
@@ -103,7 +103,7 @@ def fsm_generate_c_source(fsmdesc):
     event_names = fsmdesc.get_event_names()
 
     fsmCtxName    = cprefix(fsmname, 'ctx', 't')
-    fsmDataName   = cprefix(fsmname, 'data', 't')
+    fsmDataName   = user_data or cprefix(fsmname, 'data', 't')
     stateEnumName = cprefix(fsmname, 'state')
     eventEnumName = cprefix(fsmname, 'event')
     stateStringsNames = cprefix(fsmname, 'state_names')
@@ -122,16 +122,29 @@ def fsm_generate_c_source(fsmdesc):
         # state names declarations
         header.write('extern const char* {}[{}];\n\n'.format(stateStringsNames,
                                                              len(state_names)))
-
-        header.write(cgen.genStructDecl(fsmDataName, [('dummy', 'int')]))
         header.write('\n')
+
+        header.write(cgen.genStructForwardDecl(fsmDataName))
+        header.write('\n')
+
+
+        header.write(cgen.genStructForwardDecl(fsmCtxName))
+        header.write('\n')
+
         header.write(cgen.genStructDecl(fsmCtxName, [('state', stateEnumName),
-                                              ('data', fsmDataName)]));
+                                              ('data', pfsmDataName)]));
         header.write('\n')
 
+        # generate action and event definitions
         for action in actions:
             header.write(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
             header.write('\n')
+
+        for event in events:
+            header.write(cgen.genFuncDecl(event, 'int', [('data', cpfsmDataName)]))
+            header.write('\n')
+
+        header.write('\n\n')
 
         header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName)]))
         header.write('\n\n')
@@ -143,22 +156,9 @@ def fsm_generate_c_source(fsmdesc):
         source.write(cgen.genStringArray(stateStringsNames, state_names))
         source.write('\n')
 
-
-        #generate dummy action-function implementations
-        for action in actions:
-            source.write(cgen.genFuncImpl(action, 'void', [('data', pfsmDataName)],
-                                   '/* TODO: Add impementation here... */'))
-            source.write('\n')
-
-        for event in events:
-            source.write(cgen.genFuncImpl(event, 'int', [('data', cpfsmDataName)],
-                               '    /* TODO: Add impementation here... */\n' \
-                               '    return 0;'))
-            source.write('\n')
-
         #generate body of step function
         body  = 'const {} state = ctx->state;\n'.format(stateEnumName)
-        body += '{} data = &ctx->data;\n'.format(pfsmDataName )
+        body += '{} data = ctx->data;\n'.format(pfsmDataName )
         body += 'switch(state) {\n'
         for s, sname in zip(states, state_names):
             body += 'case {}: \n'.format(s)
@@ -192,7 +192,7 @@ def cfsm_main():
 
     f.add_transition('st3', 'ev1', 'st1')
 
-    fsm_generate_c_source(f)
+    fsm_generate_c_source(f, 'spu_data')
 
     filename = '{}_fsm'.format(f.get_name())
     filenamedot = filename + '.dot'
