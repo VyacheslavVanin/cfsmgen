@@ -65,7 +65,7 @@ class FSMDesc:
         return self.events
 
     def get_event_names(self):
-        return [ cprefix(self.name, s) for s in self.events]
+        return [ cprefix(self.name, s) for s in self.events if s != 'default']
 
     def get_actions(self):
         return self.actions
@@ -157,11 +157,11 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
         source.write('\n')
 
         #generate body of step function
-        body  = 'const {} state = ctx->state;\n'.format(stateEnumName)
-        body += '{} data = ctx->data;\n'.format(pfsmDataName )
-        body += 'switch(state) {\n'
+        body  = '    const {} state = ctx->state;\n'.format(stateEnumName)
+        body += '    {} data = ctx->data;\n\n'.format(pfsmDataName )
+        body += '    switch(state) {\n'
         for s, sname in zip(states, state_names):
-            body += 'case {}: \n'.format(sname)
+            body += '    case {}: \n'.format(sname)
             #eventlist = [e for e in fsmdesc.get_event_names_of_state(s) if e != 'default']
             eventlist = fsmdesc.get_event_names_of_state(s)
             for e in eventlist:
@@ -171,21 +171,21 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
                 event     = cprefix(fsmname, e)
                 nextstate = cprefix(fsmname, t.next)
                 action    = t.action
-                body +='    if ({}(data)) {{\n'.format(event)
-                body +='        {}(data);\n'.format(action) if action else ''
-                body +='        ctx->state = {};\n'.format(nextstate)
-                body +='        break;\n' \
-                       '    }\n'
+                body +='        if ({}(data)) {{\n'.format(event)
+                body +='            {}(data);\n'.format(action) if action else ''
+                body +='            ctx->state = {};\n'.format(nextstate)
+                body +='            break;\n' \
+                       '        }\n'
             if 'default' in eventlist:
                 t = fsmdesc.get_transition(s, 'default')
                 nextstate = cprefix(fsmname, t.next)
                 action    = t.action
-                body +='    {}(data);\n'.format(action) if action else ''
-                body +='    ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
-            body += 'break;\n'
+                body +='        {}(data);\n'.format(action) if action else ''
+                body +='        ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
+            body += '    break;\n'
 
 
-        body += '}\n'
+        body += '    }'
         source.write(cgen.genFuncImpl(stepFuncName,
                                       'void', [('ctx', pfsmCtxName)], body))
 
