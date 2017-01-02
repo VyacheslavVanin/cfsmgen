@@ -115,9 +115,11 @@ def fsm_generate_c_source(fsmdesc):
     stepFuncName  = cprefix(fsmname, 'step') 
 
     with open(fsmname + '_fsm.h', 'w') as header:
-        header.write('\n\n')
+        # enum states
         header.write(cgen.genEnum(stateEnumName, states))
         header.write('\n')
+
+        # state names definitions
         header.write(cgen.genStringArray(stateStringsNames, state_names))
         header.write('\n')
 
