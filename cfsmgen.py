@@ -119,9 +119,9 @@ def fsm_generate_c_source(fsmdesc):
         header.write(cgen.genEnum(stateEnumName, states))
         header.write('\n')
 
-        # state names definitions
-        header.write(cgen.genStringArray(stateStringsNames, state_names))
-        header.write('\n')
+        # state names declarations
+        header.write('extern const char* {}[{}];\n\n'.format(stateStringsNames,
+                                                             len(state_names)))
 
         header.write(cgen.genStructDecl(fsmDataName, [('dummy', 'int')]))
         header.write('\n')
@@ -138,6 +138,11 @@ def fsm_generate_c_source(fsmdesc):
 
     with open(fsmname + '_fsm.c', 'w') as source:
         source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
+
+        # state names definitions
+        source.write(cgen.genStringArray(stateStringsNames, state_names))
+        source.write('\n')
+
 
         #generate dummy action-function implementations
         for action in actions:
