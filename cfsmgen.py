@@ -124,10 +124,12 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
                                                              len(state_names)))
         header.write('\n')
 
+        # Forward declare user data
         header.write(cgen.genStructForwardDecl(fsmDataName))
         header.write('\n')
 
 
+        # declare fsm context structure
         header.write(cgen.genStructForwardDecl(fsmCtxName))
         header.write('\n')
 
@@ -135,17 +137,19 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
                                               ('data', pfsmDataName)]));
         header.write('\n')
 
-        # generate action and event definitions
+        # generate action declarations
         for action in actions:
             header.write(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
             header.write('\n')
 
+        # generate event declarations
         for event in event_names:
             header.write(cgen.genFuncDecl(event, 'int', [('data', cpfsmDataName)]))
             header.write('\n')
 
         header.write('\n\n')
 
+        # generate fsm step function declaration
         header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName)]))
         header.write('\n\n')
 
@@ -162,7 +166,6 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
         body += '    switch(state) {\n'
         for s, sname in zip(states, state_names):
             body += '    case {}: \n'.format(sname)
-            #eventlist = [e for e in fsmdesc.get_event_names_of_state(s) if e != 'default']
             eventlist = fsmdesc.get_event_names_of_state(s)
             for e in eventlist:
                 if e == 'default':
@@ -173,7 +176,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
                 action    = t.action
                 body +='        if ({}(data)) {{\n'.format(event)
                 body +='            {}(data);\n'.format(action) if action else ''
-                body +='            ctx->state = {};\n'.format(nextstate)
+                body +='            ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
                 body +='            break;\n' \
                        '        }\n'
             if 'default' in eventlist:
@@ -183,7 +186,6 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
                 body +='        {}(data);\n'.format(action) if action else ''
                 body +='        ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
             body += '    break;\n'
-
 
         body += '    }'
         source.write(cgen.genFuncImpl(stepFuncName,
