@@ -2,6 +2,7 @@
 import cgen
 import os
 
+
 def cprefix(prefix, name, postfix=''):
     ret = name
     if prefix:
@@ -94,7 +95,7 @@ class FSMDesc:
         return ret
 
     
-def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
+def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     fsmname = fsmdesc.get_name()
     states  = fsmdesc.get_states()
     events  = fsmdesc.get_events()
@@ -114,7 +115,11 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
 
     stepFuncName  = cprefix(fsmname, 'step') 
 
-    with open(fsmname + '_fsm.h', 'w') as header:
+    header_filename = '{}/{}_fsm.h'.format(target_dir, fsmname)
+    source_filename = '{}/{}_fsm.c'.format(target_dir, fsmname)
+    os.makedirs(target_dir, exist_ok=True)
+
+    with open(header_filename, 'w') as header:
         # enum states
         header.write(cgen.genEnum(stateEnumName, state_names))
         header.write('\n')
@@ -153,7 +158,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t'):
         header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName)]))
         header.write('\n\n')
 
-    with open(fsmname + '_fsm.c', 'w') as source:
+    with open(source_filename, 'w') as source:
         source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
 
         # state names definitions
