@@ -2,7 +2,6 @@
 import cgen
 import os
 
-
 def cprefix(prefix, name, postfix=''):
     ret = name
     if prefix:
@@ -212,36 +211,4 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
         body += '    }'
         source.write(cgen.genFuncImpl(stepFuncName,
                                       'void', [('ctx', pfsmCtxName)], body))
-
-
-
-
-def cfsm_main():
-    f = FSMDesc('fsmtest')
-    f.add_transition('init', 'ev1', 'st1', 'action1')
-
-    f.add_transition('st1', 'ev1', 'st1', 'action1')
-    f.add_transition('st1', 'ev2', 'st2', 'action2')
-    f.add_transition('st1', 'ev3', 'st3', 'action3')
-    f.add_transition('st1', 'default', 'st1', 'default_st1_action')
-
-    f.add_transition('st2', 'ev1', 'st1', 'action1')
-
-    f.add_transition('st3', 'ev1', 'st1')
-    f.add_transition('st3', 'default', 'st1')
-
-    fsm_generate_c_source(f, 'spu_data')
-
-    filename = '{}_fsm'.format(f.get_name())
-    filenamedot = filename + '.dot'
-    with open(filenamedot, 'w') as gv:
-        gv.write(f.to_graphwiz())
-
-    filenamepng = filename + '.png'
-    os.system('dot {} -Tpng -o {}'.format(filenamedot, filenamepng))
-
-
-
-if __name__ == '__main__':
-    cfsm_main()
 
