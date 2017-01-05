@@ -94,6 +94,15 @@ class FSMDesc:
         ret += '}'
         return ret
 
+
+def fsm_generate_image(f, target_dir='./'):
+    filename_dot = '{}/{}.dot'.format(target_dir, f.get_name())
+    filename_png = '{}/{}.png'.format(target_dir, f.get_name())
+    with open(filename_dot, 'w') as gv:
+        gv.write(f.to_graphwiz())
+
+    os.system('dot {} -Tpng -o {}'.format(filename_dot, filename_png))
+
     
 def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     fsmname = fsmdesc.get_name()
