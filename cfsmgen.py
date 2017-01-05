@@ -142,6 +142,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
                                               ('data', pfsmDataName)]));
         header.write('\n')
 
+        header.write('#ifdef __cplusplus\n')
+        header.write('extern "C" {\n')
+        header.write('#endif\n\n')
+
         # generate action declarations
         for action in actions:
             header.write(cgen.genFuncDecl(action, 'void', [('data', pfsmDataName)]))
@@ -157,6 +161,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
         # generate fsm step function declaration
         header.write(cgen.genFuncDecl(stepFuncName, 'void', [('ctx', pfsmCtxName)]))
         header.write('\n\n')
+
+        header.write('#ifdef __cplusplus\n')
+        header.write('}\n')
+        header.write('#endif\n')
 
     with open(source_filename, 'w') as source:
         source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
