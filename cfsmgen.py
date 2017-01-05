@@ -212,3 +212,40 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
         source.write(cgen.genFuncImpl(stepFuncName,
                                       'void', [('ctx', pfsmCtxName)], body))
 
+
+def name_valid(name):
+    return True
+    
+def names_valid(names):
+    for name in names:
+        if not name_valid(name):
+            return False
+    return True
+
+
+def parse_text(filename):
+    ret = FSMDesc()
+
+    lines = []
+    with open(filename, 'r') as f:
+        lines = f.readlines()
+
+    #first line - name of fsm, user data type
+    firstlinewords = lines[0].split()
+    transitions_lines = lines[1:]
+
+    name, user_data = firstlinewords[0:2]
+    for t in transitions_lines:
+        transition_words = [w.strip() for w in t.split()]
+        num_words = len(transition_words)
+        state, event, nextstate, action = (None, None, None, None)
+        if num_words >= 4:
+            state, event, nextstate, action = transition_words[0:4]
+            if names_valid([state, event, nextstate, action]):
+                ret.add_transition(state, event, nextstate, action)
+        elif num_words == 3:
+            state, event, nextstate = transition_words[0:3]
+            if names_valid([state, event, nextstate]):
+                ret.add_transition(state, event, nextstate)
+    
+    return ret
