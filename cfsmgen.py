@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import cgen
 import os
+import sys
 
 def cprefix(prefix, name, postfix=''):
     ret = name
@@ -224,7 +225,6 @@ def names_valid(names):
 
 
 def parse_text(filename):
-    ret = FSMDesc()
 
     lines = []
     with open(filename, 'r') as f:
@@ -235,6 +235,7 @@ def parse_text(filename):
     transitions_lines = lines[1:]
 
     name, user_data = firstlinewords[0:2]
+    ret = FSMDesc(name)
     for t in transitions_lines:
         transition_words = [w.strip() for w in t.split()]
         num_words = len(transition_words)
@@ -248,4 +249,17 @@ def parse_text(filename):
             if names_valid([state, event, nextstate]):
                 ret.add_transition(state, event, nextstate)
     
-    return ret
+    return (ret, user_data)
+
+
+
+def cfsmmain():
+    args = sys.argv
+    filename = args[1]
+    fsm, user_data = parse_text(filename)
+    fsm_generate_c_source(fsm, user_data)
+    fsm_generate_image(fsm)
+    pass
+
+if __name__ == '__main__':
+    cfsmmain()
