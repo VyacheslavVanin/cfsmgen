@@ -16,13 +16,13 @@ def append_uniq(container, elem):
         container.append(elem)
 
 class TransitionDesc:
-    def __init__(self, nextState, action):
+    def __init__(self, nextState, actions):
         self.next   = nextState
-        self.action = action
+        self.actions = actions
 
     def __str__(self):
-        action = self.action or 'None'
-        return self.next + ', ' + action
+        action = self.actions or 'None'
+        return self.next + ', ' + actions
 
     def __repr__(self):
         return '\'' + self.__str__() + '\''
@@ -42,15 +42,16 @@ class FSMDesc:
         ret += 'transitions: {}\n'.format(self.transitions)
         return ret
 
-    def add_transition(self, state, event, nextState, action=None):
-        transition = TransitionDesc(nextState, action)
+    def add_transition(self, state, event, nextState, actions=[]):
+        transition = TransitionDesc(nextState, actions or [])
         if state not in self.transitions:
             self.transitions[state] = {}
         append_uniq(self.states, state)
         append_uniq(self.states, nextState)
         append_uniq(self.events, event)
-        if action:
-            append_uniq(self.actions, action)
+        if actions:
+            for action in actions:
+                append_uniq(self.actions, action)
         self.transitions[state][event] = transition
     
     def get_name(self):
@@ -195,17 +196,19 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
                 t = fsmdesc.get_transition(s, e)
                 event     = cprefix(fsmname, e)
                 nextstate = cprefix(fsmname, t.next)
-                action    = t.action
+                actions    = t.actions
                 body +='        if ({}(data)) {{\n'.format(event)
-                body +='            {}(data);\n'.format(action) if action else ''
+                for action in actions:
+                    body +='            {}(data);\n'.format(action)
                 body +='            ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
                 body +='            break;\n' \
                        '        }\n'
             if 'default' in eventlist:
                 t = fsmdesc.get_transition(s, 'default')
                 nextstate = cprefix(fsmname, t.next)
-                action    = t.action
-                body +='        {}(data);\n'.format(action) if action else ''
+                actions    = t.actions
+                for action in actions:
+                    body +='        {}(data);\n'.format(action)
                 body +='        ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
             body += '    break;\n'
 
@@ -241,9 +244,10 @@ def parse_text(filename):
         num_words = len(transition_words)
         state, event, nextstate, action = (None, None, None, None)
         if num_words >= 4:
-            state, event, nextstate, action = transition_words[0:4]
-            if names_valid([state, event, nextstate, action]):
-                ret.add_transition(state, event, nextstate, action)
+            state, event, nextstate = transition_words[0:3]
+            actions = transition_words[4:]
+            if names_valid([state, event, nextstate] + actions):
+                ret.add_transition(state, event, nextstate, actions)
         elif num_words == 3:
             state, event, nextstate = transition_words[0:3]
             if names_valid([state, event, nextstate]):
