@@ -234,6 +234,7 @@ def parse_text(filename):
         lines = f.readlines()
 
     #first line - name of fsm, user data type
+    lines = [l for l in lines if not l.startswith('#') ]
     firstlinewords = lines[0].split()
     transitions_lines = lines[1:]
 
@@ -242,10 +243,9 @@ def parse_text(filename):
     for t in transitions_lines:
         transition_words = [w.strip() for w in t.split()]
         num_words = len(transition_words)
-        state, event, nextstate, action = (None, None, None, None)
         if num_words >= 4:
             state, event, nextstate = transition_words[0:3]
-            actions = transition_words[4:]
+            actions = transition_words[3:]
             if names_valid([state, event, nextstate] + actions):
                 ret.add_transition(state, event, nextstate, actions)
         elif num_words == 3:
