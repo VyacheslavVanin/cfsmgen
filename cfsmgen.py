@@ -130,6 +130,9 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     os.makedirs(target_dir, exist_ok=True)
 
     with open(header_filename, 'w') as header:
+        # include guard
+        header.write('#ifndef {0}_H\n' \
+                     '#define {0}_H\n\n'.format(fsmname.upper()))
         # enum states
         header.write(cgen.genEnum(stateEnumName, state_names))
         header.write('\n')
@@ -174,7 +177,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
 
         header.write('#ifdef __cplusplus\n')
         header.write('}\n')
+        header.write('#endif\n\n')
+
         header.write('#endif\n')
+
 
     with open(source_filename, 'w') as source:
         source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
