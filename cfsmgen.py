@@ -2,6 +2,7 @@
 import cgen
 import os
 import sys
+import re
 
 def cprefix(prefix, name, postfix=''):
     ret = name
@@ -255,30 +256,19 @@ def parse_to_transition_lines(source):
 
 
 def parse_text(filename):
-
-    lines = []
-    with open(filename, 'r') as f:
-        lines = f.readlines()
+    source = open(filename, 'r').read()
+    transitions_lines = parse_to_transition_lines(source)
 
     #first line - name of fsm, user data type
-    lines = [l for l in lines if not l.startswith('#') ]
-    firstlinewords = lines[0].split()
-    transitions_lines = lines[1:]
+    name, user_data = transitions_lines[0]
+    transitions_lines = transitions_lines[1:]
 
-    name, user_data = firstlinewords[0:2]
     ret = FSMDesc(name)
-    for t in transitions_lines:
-        transition_words = [w.strip() for w in t.split()]
-        num_words = len(transition_words)
-        if num_words >= 4:
-            state, event, nextstate = transition_words[0:3]
-            actions = transition_words[3:]
-            if names_valid([state, event, nextstate] + actions):
-                ret.add_transition(state, event, nextstate, actions)
-        elif num_words == 3:
-            state, event, nextstate = transition_words[0:3]
-            if names_valid([state, event, nextstate]):
-                ret.add_transition(state, event, nextstate)
+    for transition_words in transitions_lines:
+        state, event, nextstate = transition_words[0:3]
+        actions = transition_words[3:]
+        if names_valid([state, event, nextstate] + actions):
+            ret.add_transition(state, event, nextstate, actions)
     
     return (ret, user_data)
 
