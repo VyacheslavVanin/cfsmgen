@@ -236,6 +236,24 @@ def names_valid(names):
     return True
 
 
+def parse_to_transition_lines(source):
+    def spitlist(l, condition):
+        sublist = []
+        ret = []
+        for x in l:
+            if not condition(x):
+                sublist.append(x)
+            elif sublist:
+                ret.append(sublist)
+                sublist = []
+        return ret
+
+    splitter = re.compile(r'(\w+|#.+|;)')
+    tokens = splitter.findall(source)
+    tokens_wo_comments = [t for t in tokens if not t.startswith('#')]
+    return spitlist(tokens_wo_comments, lambda x: x == ';')
+
+
 def parse_text(filename):
 
     lines = []
