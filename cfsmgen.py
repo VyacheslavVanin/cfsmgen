@@ -226,6 +226,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
 
 
 def name_valid(name):
+    # TODO: implement this. Should test if name is valid 'C' variable name
     return True
     
 def names_valid(names):
