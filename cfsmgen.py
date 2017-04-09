@@ -273,14 +273,41 @@ def parse_text(filename):
     return (ret, user_data)
 
 
+def print_help():
+    print('cfsmgen - c source generator for FSM.\n'
+          'usage:\n'
+          '    cfsmgen.py infile.fsm [OPTIONS]\n\n'
+          'fsm file format (example):\n\n'
+          '# Comments after \'#\' character till the end of line\n'
+          '# First non-comment line must be two words:\n'
+          '#    - first - name of FSM to generate.\n'
+          '#      Used for generated file names, variable and enums prefixes etc.\n'
+          '#    - second - user data type name. Used to pass user data to callbacks.\n'
+          'fsmname user_data_struct_t;\n\n'
+          '# Then define transitions using folowing format:\n'
+          '# INITIAL_STATE_NAME condition_name TARGET_STATE_NAME [action_name_1 action_name_2]; \n'
+          '# For example:\n'
+          'unpressed is_button_pressed pressed onButtonPress;\n\n'
+          '# Or for multiple actions (onButtonClick, incrementClickCounter)\n'
+          'pressed is_button_released unpressed onButtonClick incrementClickCounter;\n\n'
+          )
+    
 
 def cfsmmain():
     args = sys.argv
+    argc = len(args)
+    if argc < 2:
+        print_help()
+        return
+
+    if args[2] in ['-h', '--help']:
+        print_help()
+        return
+
     filename = args[1]
     fsm, user_data = parse_text(filename)
     fsm_generate_c_source(fsm, user_data)
     fsm_generate_image(fsm)
-    pass
 
 if __name__ == '__main__':
     cfsmmain()
