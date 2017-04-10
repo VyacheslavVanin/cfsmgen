@@ -300,7 +300,7 @@ def cfsmmain():
         print_help()
         return
 
-    if args[2] in ['-h', '--help']:
+    if args[1] in ['-h', '--help']:
         print_help()
         return
 
