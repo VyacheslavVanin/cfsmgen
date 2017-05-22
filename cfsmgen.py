@@ -132,8 +132,8 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
 
     with open(header_filename, 'w') as header:
         # include guard
-        header.write('#ifndef {0}_H\n' \
-                     '#define {0}_H\n\n'.format(fsmname.upper()))
+        header.write('#ifndef {0}_FSM_H\n' \
+                     '#define {0}_FSM_H\n\n'.format(fsmname.upper()))
 
         header.write('#ifdef __cplusplus\n')
         header.write('extern "C" {\n')
