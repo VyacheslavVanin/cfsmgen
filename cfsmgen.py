@@ -273,11 +273,17 @@ def parse_text(filename):
     return (ret, user_data)
 
 
-def print_help():
+def print_short_help():
     print('cfsmgen - c source generator for FSM.\n'
           'usage:\n'
           '    cfsmgen.py infile.fsm [OPTIONS]\n\n'
-          'fsm file format (example):\n\n'
+          'options:\n'
+          '    -h, --help - print help\n'
+          '    -p, --plot - generate visual representation\n')
+
+def print_full_help():
+    print_short_help()
+    print('fsm file format (example):\n\n'
           '# Comments after \'#\' character till the end of line\n'
           '# First non-comment line must be two words:\n'
           '#    - first - name of FSM to generate.\n'
@@ -294,20 +300,26 @@ def print_help():
     
 
 def cfsmmain():
-    args = sys.argv
+    args = sys.argv[1:]
     argc = len(args)
-    if argc < 2:
-        print_help()
+
+    options = [arg for arg in args if arg.startswith('-')]
+    nonoptions = [arg for arg in args if not arg.startswith('-')]
+
+    if set(['-h', '--help']).intersection(args):
+        print_full_help()
         return
 
-    if args[1] in ['-h', '--help']:
-        print_help()
+    if not nonoptions:
+        print_short_help()
         return
 
-    filename = args[1]
+    filename = nonoptions[0]
     fsm, user_data = parse_text(filename)
     fsm_generate_c_source(fsm, user_data)
-    fsm_generate_image(fsm)
+
+    if set(['-p', '--plot']).intersection(options):
+        fsm_generate_image(fsm)
 
 if __name__ == '__main__':
     cfsmmain()
