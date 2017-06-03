@@ -54,7 +54,7 @@ class FSMDesc:
             for action in actions:
                 append_uniq(self.actions, action)
         self.transitions[state][event] = transition
-    
+
     def get_name(self):
         return self.name
 
@@ -105,7 +105,7 @@ def fsm_generate_image(f, target_dir='./'):
 
     os.system('dot {} -Tpng -o {}'.format(filename_dot, filename_png))
 
-    
+
 def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     fsmname = fsmdesc.get_name()
     states  = fsmdesc.get_states()
@@ -121,10 +121,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     stateStringsNames = cprefix(fsmname, 'state_names')
     eventStringsNames = cprefix(fsmname, 'event_names')
     pfsmCtxName   = fsmCtxName + '*'
-    pfsmDataName  = fsmDataName + '*'   
-    cpfsmDataName  = 'const ' + fsmDataName + '*'   
+    pfsmDataName  = fsmDataName + '*'
+    cpfsmDataName  = 'const ' + fsmDataName + '*'
 
-    stepFuncName  = cprefix(fsmname, 'step') 
+    stepFuncName  = cprefix(fsmname, 'step')
 
     header_filename = '{}/{}_fsm.h'.format(target_dir, fsmname)
     source_filename = '{}/{}_fsm.c'.format(target_dir, fsmname)
@@ -229,7 +229,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
 def name_valid(name):
     # TODO: implement this. Should test if name is valid 'C' variable name
     return True
-    
+
 def names_valid(names):
     for name in names:
         if not name_valid(name):
@@ -269,7 +269,7 @@ def parse_text(filename):
         actions = transition_words[3:]
         if names_valid([state, event, nextstate] + actions):
             ret.add_transition(state, event, nextstate, actions)
-    
+
     return (ret, user_data)
 
 
@@ -297,7 +297,7 @@ def print_full_help():
           '# Or for multiple actions (onButtonClick, incrementClickCounter)\n'
           'pressed is_button_released unpressed onButtonClick incrementClickCounter;\n\n'
           )
-    
+
 
 def cfsmmain():
     args = sys.argv[1:]
