@@ -3,6 +3,7 @@ import cgen
 import os
 import sys
 import re
+import getopt 
 
 def cprefix(prefix, name, postfix=''):
     ret = name
@@ -303,12 +304,14 @@ def cfsmmain():
     args = sys.argv[1:]
     argc = len(args)
 
-    options = [arg for arg in args if arg.startswith('-')]
-    nonoptions = [arg for arg in args if not arg.startswith('-')]
-
-    if set(['-h', '--help']).intersection(args):
-        print_full_help()
-        return
+    need_plot = False
+    options, nonoptions = getopt.gnu_getopt(args, 'hp', ['help', 'plot'])
+    for o, a in options:
+        if o in ('-h', '--help'):
+            print_full_help()
+            return
+        elif o in ('-p', '--plot'):
+            need_plot = True
 
     if not nonoptions:
         print_short_help()
@@ -318,8 +321,9 @@ def cfsmmain():
     fsm, user_data = parse_text(filename)
     fsm_generate_c_source(fsm, user_data)
 
-    if set(['-p', '--plot']).intersection(options):
+    if need_plot:
         fsm_generate_image(fsm)
+
 
 if __name__ == '__main__':
     cfsmmain()
