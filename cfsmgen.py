@@ -280,6 +280,7 @@ def print_short_help():
           '    cfsmgen.py infile.fsm [OPTIONS]\n\n'
           'options:\n'
           '    -h, --help - print help\n'
+          '    -o dir, --out-dir=dir - output directory\n'
           '    -p, --plot - generate visual representation\n')
 
 def print_full_help():
@@ -304,14 +305,18 @@ def cfsmmain():
     args = sys.argv[1:]
     argc = len(args)
 
+    target_dir = './'
     need_plot = False
-    options, nonoptions = getopt.gnu_getopt(args, 'hp', ['help', 'plot'])
+    options, nonoptions = getopt.gnu_getopt(args, 'hpo:', ['help', 'plot',
+        'output-dir='])
     for o, a in options:
         if o in ('-h', '--help'):
             print_full_help()
             return
         elif o in ('-p', '--plot'):
             need_plot = True
+        elif o in ('-o', '--output-dir'):
+            target_dir = a
 
     if not nonoptions:
         print_short_help()
@@ -319,10 +324,10 @@ def cfsmmain():
 
     filename = nonoptions[0]
     fsm, user_data = parse_text(filename)
-    fsm_generate_c_source(fsm, user_data)
+    fsm_generate_c_source(fsm, user_data, target_dir)
 
     if need_plot:
-        fsm_generate_image(fsm)
+        fsm_generate_image(fsm, target_dir)
 
 
 if __name__ == '__main__':
