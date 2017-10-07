@@ -118,9 +118,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     fsmCtxName    = cprefix(fsmname, 'ctx', 't')
     fsmDataName   = user_data or cprefix(fsmname, 'data', 't')
     stateEnumName = cprefix(fsmname, 'state')
-    eventEnumName = cprefix(fsmname, 'event')
     stateStringsNames = cprefix(fsmname, 'state_names')
-    eventStringsNames = cprefix(fsmname, 'event_names')
     pfsmCtxName   = fsmCtxName + '*'
     pfsmDataName  = fsmDataName + '*'
     cpfsmDataName  = 'const ' + fsmDataName + '*'
