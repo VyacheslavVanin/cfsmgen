@@ -112,12 +112,12 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     states  = fsmdesc.get_states()
     events  = fsmdesc.get_events()
     actions = fsmdesc.get_actions()
-    state_names = fsmdesc.get_state_names()
+    state_names = [s.upper() for s in fsmdesc.get_state_names()]
     event_names = fsmdesc.get_event_names()
 
     fsmCtxName    = cprefix(fsmname, 'ctx', 't')
     fsmDataName   = user_data or cprefix(fsmname, 'data', 't')
-    stateEnumName = cprefix(fsmname, 'state')
+    stateEnumName = cprefix(fsmname, 'state').upper()
     stateStringsNames = cprefix(fsmname, 'state_names')
     pfsmCtxName   = fsmCtxName + '*'
     pfsmDataName  = fsmDataName + '*'
@@ -203,7 +203,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
                     continue
                 t = fsmdesc.get_transition(s, e)
                 event     = cprefix(fsmname, e)
-                nextstate = cprefix(fsmname, t.next)
+                nextstate = cprefix(fsmname, t.next).upper()
                 actions    = t.actions
                 body +='        if ({}(data)) {{\n'.format(event)
                 for action in actions:
@@ -213,7 +213,7 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
                        '        }\n'
             if 'default' in eventlist:
                 t = fsmdesc.get_transition(s, 'default')
-                nextstate = cprefix(fsmname, t.next)
+                nextstate = cprefix(fsmname, t.next).upper()
                 actions    = t.actions
                 for action in actions:
                     body +='        {}(data);\n'.format(action)
