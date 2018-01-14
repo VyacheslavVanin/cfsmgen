@@ -114,7 +114,8 @@ def add_generated_message(filedesc):
     filedesc.write(' */\n\n')
 
 
-def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
+def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./',
+                          debug=False):
     fsmname = fsmdesc.get_name()
     states  = fsmdesc.get_states()
     events  = fsmdesc.get_events()
@@ -195,6 +196,8 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
     with open(source_filename, 'w') as source:
         add_generated_message(source)
         source.write('#include "{}_fsm.h"\n\n'.format(fsmname))
+        if debug:
+            source.write('#include <stdio.h>\n\n')
 
         # state names definitions
         source.write(cgen.genStringArray(stateStringsNames, states))
@@ -203,6 +206,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
         #generate body of step function
         body  = '    const {} state = ctx->state;\n'.format(stateEnumName)
         body += '    {} data = ctx->data;\n\n'.format(pfsmDataName )
+
+        if debug:
+            body += '    printf("%s -> ", {}[state]);\n'.format(stateStringsNames)
+
         body += '    switch(state) {\n'
         for s, sname in zip(states, state_names):
             body += '    case {}: \n'.format(sname)
@@ -215,6 +222,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
                 nextstate = cprefix(fsmname, t.next).upper()
                 actions    = t.actions
                 body +='        if ({}(data)) {{\n'.format(event)
+
+                if debug:
+                    body += ' '*12 + 'printf("{}");\n'.format(e)
+
                 for action in actions:
                     body +='            {}(data);\n'.format(action)
                 body +='            ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
@@ -229,7 +240,10 @@ def fsm_generate_c_source(fsmdesc, user_data = 'user_data_t', target_dir='./'):
                 body +='        ctx->state = {};\n'.format(nextstate) if sname != nextstate else ''
             body += '    break;\n'
 
-        body += '    }'
+        body += '    }\n'
+        if debug:
+            body += '    printf(" -> %s\\n", {}[ctx->state]);'.format(stateStringsNames)
+
         source.write(cgen.genFuncImpl(stepFuncName,
                                       'void', [('ctx', pfsmCtxName)], body))
 
@@ -287,6 +301,7 @@ def print_short_help():
           '    cfsmgen.py infile.fsm [OPTIONS]\n\n'
           'options:\n'
           '    -h, --help - print help\n'
+          '    -g, --debug - generate in debug mode\n'
           '    -o dir, --out-dir=dir - output directory\n'
           '    -p, --plot - generate visual representation\n')
 
@@ -314,8 +329,9 @@ def cfsmmain():
 
     target_dir = './'
     need_plot = False
-    options, nonoptions = getopt.gnu_getopt(args, 'hpo:', ['help', 'plot',
-        'output-dir='])
+    debug = False
+    options, nonoptions = getopt.gnu_getopt(args, 'hpo:g', ['help', 'plot',
+        'output-dir=', 'debug'])
     for o, a in options:
         if o in ('-h', '--help'):
             print_full_help()
@@ -324,6 +340,8 @@ def cfsmmain():
             need_plot = True
         elif o in ('-o', '--output-dir'):
             target_dir = a
+        elif o in ('-g', '--debug'):
+            debug = True
 
     if not nonoptions:
         print_short_help()
@@ -331,7 +349,7 @@ def cfsmmain():
 
     filename = nonoptions[0]
     fsm, user_data = parse_text(filename)
-    fsm_generate_c_source(fsm, user_data, target_dir)
+    fsm_generate_c_source(fsm, user_data, target_dir, debug)
 
     if need_plot:
         fsm_generate_image(fsm, target_dir)
